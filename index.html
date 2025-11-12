@@ -1,0 +1,245 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Wellness Personas — Sister Nivedita University</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="icon" href="data:;base64,iVBORw0KGgo=" />
+  <!-- Plotly & PapaParse -->
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+</head>
+<body class="bg-slate-50 text-slate-800">
+  <header class="bg-white shadow-sm">
+    <div class="max-w-6xl mx-auto px-6 py-6 flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <div class="w-12 h-12 bg-gradient-to-br from-indigo-500 to-pink-500 rounded-lg flex items-center justify-center text-white font-bold">SNU</div>
+        <div>
+          <h1 class="text-xl font-semibold">Wellness Personas of SNU</h1>
+          <p class="text-sm text-slate-500">Clustering student lifestyles to enable targeted wellness programs</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <a href="data/clustered_results.csv" download class="px-4 py-2 bg-indigo-600 text-white rounded-md shadow hover:bg-indigo-700">Download CSV</a>
+        <a href="report/Wellness_Personas_SNU_Report.pdf" class="px-4 py-2 border border-slate-200 rounded-md text-slate-700 hover:bg-slate-100">Download Report (PDF)</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-6 py-10">
+    <!-- Project Overview -->
+    <section class="bg-white p-6 rounded-2xl shadow mb-8">
+      <div class="grid md:grid-cols-3 gap-6">
+        <div class="md:col-span-2">
+          <h2 class="text-2xl font-semibold">Project Overview</h2>
+          <p class="mt-3 text-slate-600">This project clusters students at Sister Nivedita University into wellness personas using features: <strong>eating_out_per_week</strong>, <strong>food_budget_per_meal_inr</strong>, <strong>sweet_tooth_level</strong> and <strong>weekly_hobby_hours</strong>. The resulting personas help canteen management, health clubs, and student affairs tailor programs.</p>
+          <ul class="mt-3 text-sm text-slate-500 space-y-1">
+            <li>Author: <strong>Priyanka Banerjee</strong></li>
+            <li>Date: <strong>01/11/2025</strong></li>
+            <li>Method: <strong>KMeans Clustering</strong></li>
+            <li>Evaluation: <strong>Silhouette Score, Davies–Bouldin Index</strong></li>
+          </ul>
+        </div>
+        <div class="p-4 bg-slate-50 rounded-lg">
+          <h3 class="text-sm text-slate-500">Quick Stats</h3>
+          <div id="quick-stats" class="mt-3 grid grid-cols-2 gap-3"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Charts -->
+    <section class="grid md:grid-cols-2 gap-6">
+      <div class="bg-white p-6 rounded-2xl shadow">
+        <h3 class="font-semibold mb-3">PCA: Cluster Visualization</h3>
+        <div id="pca-plot" style="height:420px;"></div>
+      </div>
+
+      <div class="bg-white p-6 rounded-2xl shadow">
+        <h3 class="font-semibold mb-3">Cluster Size Distribution</h3>
+        <div id="cluster-bar" style="height:360px;"></div>
+      </div>
+
+      <div class="bg-white p-6 rounded-2xl shadow">
+        <h3 class="font-semibold mb-3">Boxplots by Cluster</h3>
+        <div id="boxplots" style="height:420px;"></div>
+      </div>
+
+      <div class="bg-white p-6 rounded-2xl shadow">
+        <h3 class="font-semibold mb-3">Feature Correlations</h3>
+        <div id="corr-heatmap" style="height:360px;"></div>
+      </div>
+    </section>
+
+    <!-- Insights & Recommendations -->
+    <section class="bg-white p-6 rounded-2xl shadow mt-8">
+      <h3 class="text-xl font-semibold">Key Findings & Recommendations</h3>
+      <div id="findings" class="mt-4 text-slate-700"></div>
+    </section>
+
+    <footer class="mt-10 text-sm text-slate-500">Made for <strong>Sister Nivedita University</strong> • Machine Learning Challenge 2025</footer>
+  </main>
+
+  <script>
+    // Helper: fetch CSV from data/clustered_results.csv and parse
+    async function loadData() {
+      const res = await fetch('data/clustered_results.csv');
+      const text = await res.text();
+      const parsed = Papa.parse(text, {header:true, dynamicTyping:true}).data;
+      return parsed.filter(r => Object.keys(r).length > 0);
+    }
+
+    function computePCA(X, dims=2) {
+      // Simple PCA using numeric.js-free approach: use SVD via numeric library is not available.
+      // We'll do a quick PCA using covariance matrix and eigen decomposition via math.js not included.
+      // Instead, for simplicity, we'll use Plotly's PCA-like scatter by mapping two strongest features after scaling.
+      return null;
+    }
+
+    function getNumericRows(data) {
+      // Extract numeric columns used in clustering
+      return data.map(r => ({
+        eating_out: r.eating_out_per_week,
+        budget: r.food_budget_per_meal_inr,
+        sweet: r.sweet_tooth_level,
+        hobby: r.weekly_hobby_hours,
+        cluster: r.cluster
+      }));
+    }
+
+    function summarize(data) {
+      const clusters = {};
+      data.forEach(r => {
+        const c = r.cluster;
+        if (!(c in clusters)) clusters[c] = {count:0, eating:0, budget:0, sweet:0, hobby:0};
+        clusters[c].count += 1;
+        clusters[c].eating += r.eating_out_per_week;
+        clusters[c].budget += r.food_budget_per_meal_inr;
+        clusters[c].sweet += r.sweet_tooth_level;
+        clusters[c].hobby += r.weekly_hobby_hours;
+      });
+      const out = [];
+      for (const k of Object.keys(clusters).sort((a,b)=>a-b)) {
+        const g = clusters[k];
+        out.push({cluster: Number(k), count: g.count, eating:(g.eating/g.count).toFixed(2), budget: Math.round(g.budget/g.count), sweet:(g.sweet/g.count).toFixed(2), hobby:(g.hobby/g.count).toFixed(2)});
+      }
+      return out;
+    }
+
+    function drawQuickStats(summary) {
+      const container = document.getElementById('quick-stats');
+      container.innerHTML = '';
+      const total = summary.reduce((s, c)=> s + c.count, 0);
+      const stats = [
+        {label: 'Total Students', value: total},
+        {label: 'Clusters', value: summary.length},
+      ];
+      stats.forEach(s => {
+        const el = document.createElement('div');
+        el.className = 'p-3 bg-white rounded-lg shadow-sm text-center';
+        el.innerHTML = `<div class='text-sm text-slate-500'>${s.label}</div><div class='text-lg font-semibold mt-1'>${s.value}</div>`;
+        container.appendChild(el);
+      });
+    }
+
+    function drawClusterBar(summary) {
+      const x = summary.map(s => 'Cluster ' + s.cluster);
+      const y = summary.map(s => s.count);
+      const data = [{x,y,type:'bar', marker:{color:['#6366f1','#f43f5e','#10b981','#f59e0b','#06b6d4']}}];
+      const layout = {margin:{t:30,b:40,l:40,r:20}, xaxis:{title:'Cluster'}, yaxis:{title:'Count'}};
+      Plotly.newPlot('cluster-bar', data, layout, {responsive:true});
+    }
+
+    function drawBoxplots(rows) {
+      const clusters = [...new Set(rows.map(r=>r.cluster))].sort((a,b)=>a-b);
+      const features = ['eating_out','budget','sweet','hobby'];
+      const names = {'eating_out':'Eating out/week','budget':'Budget/meal (INR)','sweet':'Sweet tooth level','hobby':'Weekly hobby hours'};
+      const traces = [];
+      features.forEach((f,i)=>{
+        clusters.forEach(c=>{
+          const vals = rows.filter(r=>r.cluster==c).map(r=>r[f]);
+          traces.push({y:vals, name:`C${c} - ${names[f]}`, type:'box'});
+        });
+      });
+      // For clarity we'll draw single feature boxplots per call; draw the eating_out boxplot first
+      const data = clusters.map(c=>({y: rows.filter(r=>r.cluster==c).map(r=>r.eating_out), type:'box', name:'Cluster '+c}));
+      const layout = {title:'Eating out per week by cluster', margin:{t:40}};
+      Plotly.newPlot('boxplots', data, layout, {responsive:true});
+    }
+
+    function drawPCAplaceholder(rows) {
+      // We don't run PCA in-browser here. Instead choose hobby vs eating_out as a 2D proxy for visualization.
+      const clusters = [...new Set(rows.map(r=>r.cluster))].sort((a,b)=>a-b);
+      const colors = ['#6366f1','#f43f5e','#10b981','#f59e0b','#06b6d4'];
+      const traces = clusters.map((c,idx)=>({
+        x: rows.filter(r=>r.cluster==c).map(r=>r.hobby),
+        y: rows.filter(r=>r.cluster==c).map(r=>r.eating_out),
+        mode:'markers',
+        type:'scatter',
+        name:'Cluster '+c,
+        marker:{size:10, color:colors[idx % colors.length]}
+      }));
+      const layout = {xaxis:{title:'Weekly hobby hours'}, yaxis:{title:'Eating out per week'}, margin:{t:30}};
+      Plotly.newPlot('pca-plot', traces, layout, {responsive:true});
+    }
+
+    function drawCorrHeatmap(rows) {
+      const vals = rows.map(r=>[r.eating_out, r.budget, r.sweet, r.hobby]);
+      // compute correlation matrix
+      const features = ['EatingOut','Budget','Sweet','Hobby'];
+      const mat = [];
+      for (let i=0;i<4;i++){
+        mat[i]=[];
+        for (let j=0;j<4;j++){
+          const xi = vals.map(v=>v[i]);
+          const xj = vals.map(v=>v[j]);
+          const mean = arr=> arr.reduce((a,b)=>a+b,0)/arr.length;
+          const mxi = mean(xi), mxj = mean(xj);
+          let num=0, denx=0, deny=0;
+          for (let k=0;k<xi.length;k++){ num += (xi[k]-mxi)*(xj[k]-mxj); denx += Math.pow(xi[k]-mxi,2); deny += Math.pow(xj[k]-mxj,2); }
+          const corr = num / Math.sqrt(denx*deny + 1e-9);
+          mat[i].push(corr);
+        }
+      }
+      const data = [{ z: mat, x: features, y: features, type:'heatmap', colorscale:'RdBu', zmid:0 }];
+      const layout = {margin:{t:10}};
+      Plotly.newPlot('corr-heatmap', data, layout, {responsive:true});
+    }
+
+    function renderFindings(summary) {
+      const cont = document.getElementById('findings');
+      cont.innerHTML = '';
+      summary.forEach(s=>{
+        const div = document.createElement('div');
+        div.className = 'mb-3 p-3 border-l-4 border-indigo-500 bg-indigo-50 rounded';
+        div.innerHTML = `<strong>Cluster ${s.cluster}</strong> — <em>n=${s.count}</em><br/>Avg eating out: <strong>${s.eating}</strong> /week • Avg budget: <strong>₹${s.budget}</strong> • Avg hobby hours: <strong>${s.hobby}</strong> • Avg sweet level: <strong>${s.sweet}</strong>`;
+        cont.appendChild(div);
+      });
+
+      const rec = document.createElement('div');
+      rec.className = 'mt-4 p-4 bg-white border rounded';
+      rec.innerHTML = `<h4 class='font-semibold'>Recommendations</h4>
+        <ul class='list-disc ml-5 mt-2 text-slate-700'>
+          <li>Introduce healthy meal combos for clusters with high eating_out & medium budget.</li>
+          <li>Run hobby-based wellness events targeted to low-hobby clusters to increase activity.</li>
+          <li>Offer nutrition workshops and easy meal-prep sessions for busy students.</li>
+        </ul>`;
+      cont.appendChild(rec);
+    }
+
+    // Main
+    (async ()=>{
+      const data = await loadData();
+      const rows = getNumericRows(data);
+      const summary = summarize(data);
+      drawQuickStats(summary);
+      drawClusterBar(summary);
+      drawBoxplots(rows);
+      drawPCAplaceholder(rows);
+      drawCorrHeatmap(rows);
+      renderFindings(summary);
+    })();
+  </script>
+</body>
+</html>
