@@ -209,7 +209,7 @@ jupyter notebook Wellness_Personas_SNU.ipynb
 
 # 5. (Optional) Run the website locally
 open website/index.html
-
+```
 
 
 ## 🏅 Evaluation Criteria (As per SNU Guidelines)
@@ -268,4 +268,5 @@ Feel free to use and modify for educational purposes.
 
 
 👨‍💻 *Developed with ❤️ by [Priyanka Banerjee](https://github.com/PriyankaBanerjee2004)*
+
 
