@@ -158,7 +158,7 @@ Wellness_Personas_SNU/
 ├── report/
 │   └── Wellness_Personas_Report.pdf       # Final project report
 └── README.md                              # Project documentation
-
+```
 
 ---
 
@@ -268,3 +268,4 @@ Feel free to use and modify for educational purposes.
 
 
 👨‍💻 *Developed with ❤️ by [Priyanka Banerjee](https://github.com/PriyankaBanerjee2004)*
+
