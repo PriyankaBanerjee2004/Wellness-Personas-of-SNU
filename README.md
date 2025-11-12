@@ -79,14 +79,14 @@ Instead, we **discover patterns** from the data using **unsupervised learning**.
 
 ```mermaid
 graph TD
-A[Data Collection via Google Form] --> B[Data Preprocessing & Cleaning]
-B --> C[Feature Engineering]
-C --> D[Scaling & Normalization]
-D --> E[KMeans Clustering]
-E --> F[Evaluation (Silhouette, DB Index)]
-F --> G[Visualization & Insights]
-G --> H[Actionable Recommendations]
-
+    A([📝 Data Collection]) --> B([🧹 Preprocessing])
+    B --> C([🧠 Feature Engineering])
+    C --> D([⚖️ Scaling & Normalization])
+    D --> E([🎯 KMeans Clustering])
+    E --> F([📊 Evaluation: Silhouette & DB Index])
+    F --> G([📈 Visualization & Insights])
+    G --> H([💡 Actionable Recommendations])
+```
 
 
 ## 🧮 Evaluation Metrics
@@ -265,5 +265,6 @@ Feel free to use and modify for educational purposes.
 </details>
 
 ---
+
 
 👨‍💻 *Developed with ❤️ by [Priyanka Banerjee](https://github.com/PriyankaBanerjee2004)*
